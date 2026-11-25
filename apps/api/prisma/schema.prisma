@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Perfil {
+  ALUNO
+  PROFESSOR
+  ADMIN
+}
+
+enum StatusReserva {
+  PENDENTE
+  APROVADA
+  RECUSADA
+  CANCELADA
+}
+
+model Usuario {
+  id               Int       @id @default(autoincrement())
+  nome             String
+  email            String    @unique
+  senhaHash        String    @map("senha_hash")
+  perfil           Perfil
+  ativo            Boolean   @default(true)
+  tentativasFalhas Int       @default(0) @map("tentativas_falhas")
+  bloqueadoAte     DateTime? @map("bloqueado_ate") @db.Timestamptz(3)
+  criadoEm         DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  reservas  Reserva[]         @relation("Solicitante")
+  decisoes  Reserva[]         @relation("Decisor")
+  bloqueios Bloqueio[]
+  series    SerieRecorrente[]
+  logs      LogAuditoria[]
+
+  @@map("usuario")
+}
+
+model Laboratorio {
+  id         Int     @id @default(autoincrement())
+  nome       String  @unique
+  tipo       String
+  capacidade Int
+  recursos   String  @default("")
+  abertura   String  @db.VarChar(5)
+  fechamento String  @db.VarChar(5)
+  ativo      Boolean @default(true)
+
+  reservas  Reserva[]
+  bloqueios Bloqueio[]
+  series    SerieRecorrente[]
+
+  @@map("laboratorio")
+}
+
+model Reserva {
+  id            Int           @id @default(autoincrement())
+  usuarioId     Int           @map("usuario_id")
+  laboratorioId Int           @map("laboratorio_id")
+  serieId       Int?          @map("serie_id")
+  inicio        DateTime      @db.Timestamptz(3)
+  fim           DateTime      @db.Timestamptz(3)
+  finalidade    String
+  status        StatusReserva
+  justificativa String?
+  decididoPor   Int?          @map("decidido_por")
+  decididoEm    DateTime?     @map("decidido_em") @db.Timestamptz(3)
+  criadoEm      DateTime      @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario     Usuario          @relation("Solicitante", fields: [usuarioId], references: [id])
+  decisor     Usuario?         @relation("Decisor", fields: [decididoPor], references: [id])
+  laboratorio Laboratorio      @relation(fields: [laboratorioId], references: [id])
+  serie       SerieRecorrente? @relation(fields: [serieId], references: [id])
+
+  @@index([laboratorioId, inicio])
+  @@index([usuarioId, inicio])
+  @@map("reserva")
+}
+
+model Bloqueio {
+  id            Int      @id @default(autoincrement())
+  laboratorioId Int      @map("laboratorio_id")
+  criadoPor     Int      @map("criado_por")
+  inicio        DateTime @db.Timestamptz(3)
+  fim           DateTime @db.Timestamptz(3)
+  motivo        String
+
+  laboratorio Laboratorio @relation(fields: [laboratorioId], references: [id])
+  criador     Usuario     @relation(fields: [criadoPor], references: [id])
+
+  @@index([laboratorioId, inicio])
+  @@map("bloqueio")
+}
+
+model SerieRecorrente {
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int      @map("usuario_id")
+  laboratorioId Int      @map("laboratorio_id")
+  diaSemana     Int      @map("dia_semana") @db.SmallInt
+  horaInicio    String   @map("hora_inicio") @db.VarChar(5)
+  horaFim       String   @map("hora_fim") @db.VarChar(5)
+  dataInicio    DateTime @map("data_inicio") @db.Date
+  dataFim       DateTime @map("data_fim") @db.Date
+
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+  laboratorio Laboratorio @relation(fields: [laboratorioId], references: [id])
+  reservas    Reserva[]
+
+  @@map("serie_recorrente")
+}
+
+model LogAuditoria {
+  id         BigInt   @id @default(autoincrement())
+  usuarioId  Int      @map("usuario_id")
+  acao       String
+  entidade   String
+  entidadeId Int      @map("entidade_id")
+  detalhes   Json?
+  criadoEm   DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([entidade, entidadeId])
+  @@map("log_auditoria")
+}
+
+model RegraPerfil {
+  perfil                  Perfil        @id
+  statusInicial           StatusReserva @map("status_inicial")
+  duracaoMaximaMinutos    Int?          @map("duracao_maxima_minutos")
+  antecedenciaMaximaDias  Int?          @map("antecedencia_maxima_dias")
+  antecedenciaMinimaMinutos Int         @default(0) @map("antecedencia_minima_minutos")
+
+  @@map("regra_perfil")
+}
+
+model Configuracao {
+  chave String @id
+  valor String
+
+  @@map("configuracao")
+}
