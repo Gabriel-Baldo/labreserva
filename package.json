@@ -1,0 +1,10 @@
+{
+  "name": "labreserva",
+  "private": true,
+  "scripts": {
+    "telas": "node scripts/capturar-telas.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}
