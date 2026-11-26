@@ -44,7 +44,7 @@ async function semear() {
 
   await Promise.all(REGRAS.map((regra) => prisma.regraPerfil.upsert({ where: { perfil: regra.perfil }, update: regra, create: regra })));
   await Promise.all(CONFIGURACOES.map((c) => prisma.configuracao.upsert({ where: { chave: c.chave }, update: { valor: c.valor }, create: c })));
-  for (const u of USUARIOS) await prisma.usuario.upsert({ where: { email: u.email }, update: {}, create: { ...u, senhaHash } });
+  for (const u of USUARIOS) await prisma.usuario.upsert({ where: { email: u.email }, update: { senhaHash, ativo: true, tentativasFalhas: 0, bloqueadoAte: null }, create: { ...u, senhaHash } });
   for (const l of LABORATORIOS) await prisma.laboratorio.upsert({ where: { nome: l.nome }, update: {}, create: l });
 
   if ((await prisma.reserva.count()) > 0) return;

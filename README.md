@@ -30,9 +30,9 @@ O `seed` cria as regras por perfil, as configurações, os usuários de demonstr
 
 ## Contas de demonstração
 
-Todas usam a senha definida em `SEED_PASSWORD` no `.env`.
+Todas usam a senha `aluno123`, definida em `SEED_PASSWORD` no `.env`. Rodar o `seed` de novo redefine a senha dessas contas.
 
-A senha do `.env.example` é só para demonstração local. Troque `SEED_PASSWORD` e `JWT_SECRET` em qualquer ambiente exposto na internet.
+É uma senha só para demonstração local. Troque `SEED_PASSWORD` e `JWT_SECRET` em qualquer ambiente exposto na internet.
 
 | Perfil | E-mail |
 |---|---|
